@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'take_attendance_screen.dart';
 import 'grade_assignments_screen.dart';
 import 'schedule_event_screen.dart';
@@ -9,7 +10,10 @@ import '../services/auth_service.dart';
 import '../services/teacher_profile_service.dart';
 import '../services/LeaveService.dart';
 import 'package:intl/intl.dart';
+<<<<<<< Updated upstream
 import 'package:cloud_firestore/cloud_firestore.dart';
+=======
+>>>>>>> Stashed changes
 
 void main() {
   runApp(const MaterialApp(
@@ -28,11 +32,16 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   Map<String, dynamic>? teacherData;
   bool isLoading = true;
   List<Map<String, dynamic>> leaveAppointments = [];
+<<<<<<< Updated upstream
   bool isLeaveLoading = true;
+=======
+  final LeaveService _leaveService = LeaveService();
+>>>>>>> Stashed changes
 
   @override
   void initState() {
     super.initState();
+<<<<<<< Updated upstream
     fetchTeacherProfile();
     fetchLeaveApplications();
   }
@@ -40,16 +49,82 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   Future<void> fetchTeacherProfile() async {
     final String? employeeId = await AuthService.getUserId();
     if (employeeId == null) {
+=======
+    print('TeacherDashboardScreen initialized'); // Debug log
+    _loadTeacherProfile();
+    fetchLeaveAppointments();
+  }
+
+  Future<void> _loadTeacherProfile() async {
+    try {
+      final String? teacherId = await AuthService.getUserId();
+      print('Loading teacher profile for ID: $teacherId'); // Debug log
+      
+      if (teacherId == null) {
+        print('Error: Teacher ID is null in _loadTeacherProfile'); // Debug log
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
+      
+      final profile = await ProfileService().getTeacherProfile(teacherId);
+      print('Teacher profile loaded: $profile'); // Debug log
+      
+      setState(() {
+        teacherData = profile;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error in _loadTeacherProfile: $e'); // Debug log
+>>>>>>> Stashed changes
       setState(() {
         isLoading = false;
       });
-      return;
     }
+<<<<<<< Updated upstream
     final profile = await TeacherProfileService().getTeacherProfile(employeeId);
     setState(() {
       teacherData = profile;
       isLoading = false;
     });
+=======
+  }
+
+  Future<void> fetchLeaveAppointments() async {
+    try {
+      print('Starting fetchLeaveAppointments'); // Debug log
+      final teacherId = await AuthService.getUserId();
+      print('Teacher ID from AuthService: $teacherId'); // Debug log
+      
+      if (teacherId == null) {
+        print('Error: Teacher ID is null in fetchLeaveAppointments'); // Debug log
+        return;
+      }
+
+      print('Calling LeaveService.getLeavesForClassTeacher with ID: $teacherId'); // Debug log
+      final leaves = await LeaveService().getLeavesForClassTeacher(teacherId);
+      print('Received leaves from service: ${leaves.length}'); // Debug log
+      print('Leaves data: $leaves'); // Debug log
+      
+      if (mounted) {
+        setState(() {
+          leaveAppointments = leaves;
+          print('Updated leaveAppointments in state: ${leaveAppointments.length}'); // Debug log
+        });
+      }
+    } catch (e) {
+      print('Error in fetchLeaveAppointments: $e'); // Debug log
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading leave applications: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+>>>>>>> Stashed changes
   }
 
   Future<void> fetchLeaveApplications() async {
@@ -145,8 +220,14 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               const SizedBox(height: 20),
               _buildQuickActions(context),
               const SizedBox(height: 20),
+<<<<<<< Updated upstream
               _buildLeaveAppointments(context),
               const SizedBox(height: 20),
+=======
+              _buildLeaveAppointments(),
+              const SizedBox(height: 20),
+              _buildStudentStats(),
+>>>>>>> Stashed changes
             ],
           ),
         ),
@@ -327,6 +408,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
+<<<<<<< Updated upstream
   Widget _buildLeaveAppointments(BuildContext context) {
     if (isLeaveLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -365,9 +447,101 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 child: Text(
                   'No pending leave applications',
                   style: TextStyle(color: Colors.grey[600]),
-                ),
-              ),
+=======
+  Widget _buildStudentStats() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Class Statistics',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 15),
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard('Total Students', '150', Icons.people),
             ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: _buildStatCard('Attendance', '92%', Icons.timeline),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey[300]!,
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: Colors.blue[700], size: 30),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            title,
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLeaveAppointments() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Leave Applications',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+>>>>>>> Stashed changes
+                ),
+                IconButton(
+                  icon: Icon(Icons.refresh),
+                  onPressed: () {
+                    setState(() {
+                      leaveAppointments = [];
+                    });
+                    fetchLeaveAppointments();
+                  },
+                ),
+              ],
+            ),
+<<<<<<< Updated upstream
           )
         else
           ListView.builder(
@@ -422,10 +596,44 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                       child: Column(
+=======
+            SizedBox(height: 8),
+            if (leaveAppointments.isEmpty)
+              Center(child: CircularProgressIndicator())
+            else if (leaveAppointments.isEmpty)
+              Center(
+                child: Text(
+                  'No pending leave applications',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: leaveAppointments.length,
+                itemBuilder: (context, index) {
+                  final leave = leaveAppointments[index];
+                  return Card(
+                    margin: EdgeInsets.symmetric(vertical: 4),
+                    child: ListTile(
+                      title: Text(
+                        '${leave['childRollNumber']} - ${leave['class']}${leave['section']}',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Column(
+>>>>>>> Stashed changes
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 8),
+                          Text('Leave Type: ${leave['leaveType']}'),
+                          Text('Applied Date: ${_formatDate(leave['appliedAt'])}'),
+                          Text('Parent: ${leave['parentName']}'),
+                          Text('Phone: ${leave['parentPhone']}'),
                           Text(
+<<<<<<< Updated upstream
                             'Reason: ${appointment['reason'] ?? ''}',
                             style: const TextStyle(fontSize: 14),
                           ),
@@ -455,18 +663,94 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                                 ),
                               ],
                             ),
+=======
+                            'Status: ${leave['status'].toString().toUpperCase()}',
+                            style: TextStyle(
+                              color: leave['status'] == 'pending'
+                                  ? Colors.orange
+                                  : leave['status'] == 'approved'
+                                      ? Colors.green
+                                      : Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+>>>>>>> Stashed changes
                         ],
                       ),
+                      trailing: leave['status'] == 'pending'
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: Icon(Icons.close, color: Colors.red),
+                                  onPressed: () async {
+                                    try {
+                                      await LeaveService().updateLeaveStatus(
+                                        leave['id'],
+                                        'rejected',
+                                      );
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Leave application rejected'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                      setState(() {
+                                        leaveAppointments = [];
+                                      });
+                                      fetchLeaveAppointments();
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Error rejecting leave: $e'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.check, color: Colors.green),
+                                  onPressed: () async {
+                                    try {
+                                      await LeaveService().updateLeaveStatus(
+                                        leave['id'],
+                                        'approved',
+                                      );
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Leave application approved'),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                      setState(() {
+                                        leaveAppointments = [];
+                                      });
+                                      fetchLeaveAppointments();
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Error approving leave: $e'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ],
+                            )
+                          : null,
                     ),
-                  ],
-                ),
-              );
-            },
-          ),
-      ],
+                  );
+                },
+              ),
+          ],
+        ),
+      ),
     );
   }
 
+<<<<<<< Updated upstream
   Color _getStatusColor(String? status) {
     switch (status?.toLowerCase()) {
       case 'approved':
@@ -511,5 +795,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       return DateFormat('dd/MM/yyyy').format(timestamp.toDate());
     }
     return '';
+=======
+  String _formatDate(Timestamp timestamp) {
+    final date = timestamp.toDate();
+    return DateFormat('MMM dd, yyyy hh:mm a').format(date);
+>>>>>>> Stashed changes
   }
 }

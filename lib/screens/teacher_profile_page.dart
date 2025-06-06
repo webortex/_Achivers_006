@@ -3,6 +3,9 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../services/auth_service.dart';
 import '../services/teacher_profile_service.dart';
+import '../services/LeaveService.dart';
+import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TeacherProfilePage extends StatefulWidget {
   const TeacherProfilePage({super.key});
@@ -16,6 +19,11 @@ class _TeacherProfilePageState extends State<TeacherProfilePage> {
   final ImagePicker _picker = ImagePicker();
   Map<String, dynamic>? teacherData;
   bool isLoading = true;
+  final ProfileService _profileService = ProfileService();
+  final LeaveService _leaveService = LeaveService();
+  Map<String, dynamic>? _teacherProfile;
+  bool _isLoading = true;
+  List<Map<String, dynamic>>? _leaveAppointments;
 
   // Dropdown state
   String? _selectedClass;
@@ -61,17 +69,27 @@ class _TeacherProfilePageState extends State<TeacherProfilePage> {
   @override
   void initState() {
     super.initState();
-    fetchTeacherProfile();
+    _loadTeacherProfile();
+    _loadLeaveAppointments();
   }
 
-  Future<void> fetchTeacherProfile() async {
-    final String? teacherId = await AuthService.getUserId();
-    if (teacherId == null) {
+  Future<void> _loadTeacherProfile() async {
+    try {
+      final userId = await AuthService.getUserId();
+      if (userId != null) {
+        final profile = await _profileService.getTeacherProfileById(userId);
+        setState(() {
+          _teacherProfile = profile;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading teacher profile: $e');
       setState(() {
-        isLoading = false;
+        _isLoading = false;
       });
-      return;
     }
+<<<<<<< Updated upstream
     final profile = await TeacherProfileService().getTeacherProfile(teacherId);
     setState(() {
       teacherData = profile;
@@ -80,6 +98,28 @@ class _TeacherProfilePageState extends State<TeacherProfilePage> {
       _selectedClass = profile?['class']?.toString();
       _selectedSection = profile?['section']?.toString();
     });
+=======
+  }
+
+  Future<void> _loadLeaveAppointments() async {
+    try {
+      final userId = await AuthService.getUserId();
+      if (userId != null) {
+        final appointments = await _leaveService.getLeavesForClassTeacher(userId);
+        setState(() {
+          _leaveAppointments = appointments;
+        });
+      }
+    } catch (e) {
+      print('Error loading leave appointments: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading leave appointments: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+>>>>>>> Stashed changes
   }
 
   Future<void> _updateClassSection() async {
@@ -457,154 +497,151 @@ class _TeacherProfilePageState extends State<TeacherProfilePage> {
     );
   }
 
-  // Add this new method to show leave appointments dialog
   void _showLeaveAppointmentsDialog(BuildContext context) {
-    // Sample leave appointment data - in a real app, this would come from a database
-    final List<Map<String, dynamic>> leaveAppointments = [
-      {
-        'studentName': 'Rahul Kumar',
-        'class': '8-A',
-        'startDate': '15/05/2023',
-        'endDate': '18/05/2023',
-        'reason': 'Family function',
-        'status': 'Pending'
-      },
-      {
-        'studentName': 'Priya Sharma',
-        'class': '10-A',
-        'startDate': '20/05/2023',
-        'endDate': '22/05/2023',
-        'reason': 'Medical appointment',
-        'status': 'Pending'
-      },
-    ];
-
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(Icons.event_busy, color: Colors.blue[700], size: 24),
-            const SizedBox(width: 8),
-            const Text('Leave Appointments'),
+            Text('Leave Applications'),
+            IconButton(
+              icon: Icon(Icons.refresh),
+              onPressed: () {
+                setState(() {
+                  _leaveAppointments = null;
+                });
+                _loadLeaveAppointments();
+              },
+            ),
           ],
         ),
-        content: SizedBox(
+        content: Container(
           width: double.maxFinite,
-          child: ListView(
-            shrinkWrap: true,
-            children: [
-              if (leaveAppointments.isEmpty)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text(
-                      'No pending leave appointments',
-                      style: TextStyle(color: Colors.grey),
+          child: _leaveAppointments == null
+              ? Center(child: CircularProgressIndicator())
+              : _leaveAppointments!.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No pending leave applications',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    )
+                  : ListView(
+                      shrinkWrap: true,
+                      children: _leaveAppointments!
+                          .map((leave) => _buildLeaveAppointmentTile(leave))
+                          .toList(),
                     ),
-                  ),
-                )
-              else
-                ...leaveAppointments.map(
-                    (appointment) => _buildLeaveAppointmentTile(appointment)),
-            ],
-          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text('Close'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildLeaveAppointmentTile(Map<String, dynamic> appointment) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue.shade100),
-      ),
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: CircleAvatar(
-          backgroundColor: Colors.blue.shade100,
-          child: Text(
-            appointment['studentName'][0],
-            style: TextStyle(
-              color: Colors.blue.shade700,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
+  Widget _buildLeaveAppointmentTile(Map<String, dynamic> leave) {
+    final fromDate = (leave['fromDate'] as Timestamp).toDate();
+    final toDate = (leave['toDate'] as Timestamp).toDate();
+    final appliedAt = (leave['appliedAt'] as Timestamp).toDate();
+
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 4),
+      child: ListTile(
         title: Text(
-          appointment['studentName'],
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          '${leave['childRollNumber']} - ${leave['class']}${leave['section']}',
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text(
-          'Class ${appointment['class']} • ${appointment['startDate']} to ${appointment['endDate']}',
-          style: TextStyle(color: Colors.grey[600]),
-        ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.orange.shade100,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            appointment['status'],
-            style: TextStyle(
-              color: Colors.orange.shade800,
-              fontWeight: FontWeight.w500,
-              fontSize: 12,
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Leave Type: ${leave['leaveType']}'),
+            Text('Applied Date: ${DateFormat('MMM dd, yyyy hh:mm a').format(appliedAt)}'),
+            Text('Parent: ${leave['parentName']}'),
+            Text('Phone: ${leave['parentPhone']}'),
+            Text(
+              'Status: ${leave['status'].toString().toUpperCase()}',
+              style: TextStyle(
+                color: leave['status'] == 'pending'
+                    ? Colors.orange
+                    : leave['status'] == 'approved'
+                        ? Colors.green
+                        : Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
+          ],
         ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
-                Text(
-                  'Reason: ${appointment['reason']}',
-                  style: const TextStyle(fontSize: 14),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    OutlinedButton(
-                      onPressed: () {
-                        // Handle rejection logic
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: const BorderSide(color: Colors.red),
-                      ),
-                      child: const Text('Reject'),
-                    ),
-                    const SizedBox(width: 12),
-                    ElevatedButton(
-                      onPressed: () {
-                        // Handle approval logic
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('Approve'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
+        trailing: leave['status'] == 'pending'
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.close, color: Colors.red),
+                    onPressed: () async {
+                      try {
+                        await LeaveService().updateLeaveStatus(
+                          leave['id'],
+                          'rejected',
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Leave application rejected'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        setState(() {
+                          _leaveAppointments = null;
+                        });
+                        _loadLeaveAppointments();
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error rejecting leave: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.check, color: Colors.green),
+                    onPressed: () async {
+                      try {
+                        await LeaveService().updateLeaveStatus(
+                          leave['id'],
+                          'approved',
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Leave application approved'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                        setState(() {
+                          _leaveAppointments = null;
+                        });
+                        _loadLeaveAppointments();
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error approving leave: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ],
+              )
+            : null,
       ),
     );
   }

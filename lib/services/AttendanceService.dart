@@ -315,12 +315,25 @@ class AttendanceService {
 
       return snapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
+        // Safely handle the attendance map
+        final attendance = data['attendance'] as Map<String, dynamic>?;
+        if (attendance == null) {
+          print('Warning: No attendance data found for document ${doc.id}');
+          return {
+            'date': data['date'] ?? '',
+            'present': false,
+            'class': data['class'] ?? '',
+            'section': data['section'] ?? '',
+            'remarks': data['remarks'] ?? '',
+          };
+        }
+        
         return {
-          'date': data['date'],
-          'present': data['attendance'][studentId] ?? false,
-          'class': data['class'],
-          'section': data['section'],
-          'remarks': data['remarks'],
+          'date': data['date'] ?? '',
+          'present': attendance[studentId] ?? false,
+          'class': data['class'] ?? '',
+          'section': data['section'] ?? '',
+          'remarks': data['remarks'] ?? '',
         };
       }).toList();
     } catch (e) {

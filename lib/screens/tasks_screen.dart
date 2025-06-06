@@ -4,7 +4,7 @@ import 'vocal_testing_page';
 import '../services/TestService.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'mcq_page.dart';
+import 'mcq_page2.dart';
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -28,16 +28,17 @@ class TasksScreenState extends State<TasksScreen> {
   Future<void> _loadTests() async {
     try {
       final tests = await _testService.getTestsForClassAndSection();
-      
+
       // Convert tests to recent tasks format for upcoming tasks section
       final recentTasks = tests.map((test) {
         final testDate = test['date'] as Timestamp?;
-        final dueDate = testDate != null ? 
-          DateFormat('MMM dd, yyyy').format(testDate.toDate()) : 
-          'Test Available';
+        final dueDate = testDate != null
+            ? DateFormat('MMM dd, yyyy').format(testDate.toDate())
+            : 'Test Available';
 
         return {
-          'title': test['testName']?.toString() ?? '${test['subject']?.toString() ?? 'Test'}',
+          'title': test['testName']?.toString() ??
+              '${test['subject']?.toString() ?? 'Test'}',
           'subject': test['subject']?.toString() ?? 'Unknown Subject',
           'dueDate': dueDate,
           'status': test['status']?.toString() ?? 'pending',
@@ -72,27 +73,30 @@ class TasksScreenState extends State<TasksScreen> {
       final taskItems = subjectGroups.entries.map((entry) {
         final subject = entry.key;
         final subjectTests = entry.value;
-        
+
         // Calculate subject statistics
         final totalTests = subjectTests.length;
         final completedTests = subjectTests.where((test) {
           final status = test['status']?.toString().toLowerCase();
           return status == 'completed';
         }).length;
-        
+
         // Get upcoming tests (not completed and future date)
         final now = DateTime.now();
         final upcomingTests = subjectTests.where((test) {
           final status = test['status']?.toString().toLowerCase();
           final testDate = (test['date'] as Timestamp?)?.toDate();
-          return status != 'completed' && testDate != null && testDate.isAfter(now);
+          return status != 'completed' &&
+              testDate != null &&
+              testDate.isAfter(now);
         }).toList();
 
         // Get recent tests for this subject
         final recentSubjectTests = subjectTests.map((test) {
           final testDate = test['date'] as Timestamp?;
           return {
-            'title': test['testName']?.toString() ?? '${test['subject']?.toString() ?? 'Test'}',
+            'title': test['testName']?.toString() ??
+                '${test['subject']?.toString() ?? 'Test'}',
             'subject': test['subject']?.toString() ?? 'Unknown Subject',
             'status': test['status']?.toString() ?? 'pending',
             'date': testDate,
@@ -140,7 +144,7 @@ class TasksScreenState extends State<TasksScreen> {
 
   String _getSubjectIcon(String subject) {
     if (subject.isEmpty) return 'https://img.icons8.com/isometric/50/book.png';
-    
+
     switch (subject.toLowerCase()) {
       case 'mathematics':
         return 'https://img.icons8.com/isometric/50/calculator.png';
@@ -159,7 +163,7 @@ class TasksScreenState extends State<TasksScreen> {
 
   Color _getSubjectColor(String subject) {
     if (subject.isEmpty) return Colors.grey;
-    
+
     switch (subject.toLowerCase()) {
       case 'mathematics':
         return Colors.blue;
@@ -240,10 +244,10 @@ class TasksScreenState extends State<TasksScreen> {
                       ),
                     )
                   : ListView.builder(
-                scrollDirection: Axis.horizontal,
+                      scrollDirection: Axis.horizontal,
                       itemCount: _recentTasks.length,
-                itemBuilder: (context, index) {
-                  final item = _recentTasks[index];
+                      itemBuilder: (context, index) {
+                        final item = _recentTasks[index];
                         return GestureDetector(
                           onTap: () {
                             // Navigate to MCQ page for upcoming tasks
@@ -265,85 +269,97 @@ class TasksScreenState extends State<TasksScreen> {
                           },
                           child: Container(
                             width: 280,
-                    margin: const EdgeInsets.only(right: 16),
-                    decoration: BoxDecoration(
-                      color: item['color'].withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: item['color'].withOpacity(0.3)),
-                    ),
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                                      item['title']?.toString() ?? 'Untitled Task',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
+                            margin: const EdgeInsets.only(right: 16),
+                            decoration: BoxDecoration(
+                              color: item['color'].withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                  color: item['color'].withOpacity(0.3)),
                             ),
-                            Text(
-                                      item['subject']?.toString() ?? 'Unknown Subject',
-                              style: TextStyle(
-                                color: item['color'],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item['title']?.toString() ??
+                                          'Untitled Task',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    Text(
+                                      item['subject']?.toString() ??
+                                          'Unknown Subject',
+                                      style: TextStyle(
+                                        color: item['color'],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          item['dueDate']?.toString() ?? 'No due date',
+                                          item['dueDate']?.toString() ??
+                                              'No due date',
                                           style: const TextStyle(
                                             color: Colors.grey,
                                             fontSize: 12,
                                           ),
                                         ),
-                                        if (item['time'] != null && item['time'].toString().isNotEmpty)
-                            Text(
+                                        if (item['time'] != null &&
+                                            item['time'].toString().isNotEmpty)
+                                          Text(
                                             'Time: ${item['time']}',
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
-                              ),
+                                            style: const TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: 12,
+                                            ),
                                           ),
                                       ],
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                        color: item['status']?.toString().toLowerCase() == 'completed'
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: item['status']
+                                                    ?.toString()
+                                                    .toLowerCase() ==
+                                                'completed'
                                             ? Colors.green
                                             : item['color'],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                        (item['status']?.toString() ?? 'pending').toUpperCase(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        (item['status']?.toString() ??
+                                                'pending')
+                                            .toUpperCase(),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ],
-                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
             const SizedBox(height: 32),
 
@@ -378,20 +394,21 @@ class TasksScreenState extends State<TasksScreen> {
                     ),
                   )
                 : GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 1.2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-              ),
-              itemCount: _taskItems.length,
-              itemBuilder: (context, index) {
-                final item = _taskItems[index];
-                return _buildTaskCard(item, context);
-              },
-            ),
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 1.2,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                    ),
+                    itemCount: _taskItems.length,
+                    itemBuilder: (context, index) {
+                      final item = _taskItems[index];
+                      return _buildTaskCard(item, context);
+                    },
+                  ),
           ],
         ),
       ),
@@ -443,12 +460,14 @@ class TasksScreenState extends State<TasksScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => TaskDetailScreen(
-              task: task,
-              subject: task['title'],
-              studentId: '',
-              onStatusChanged: (bool status) {
-                // Handle status change
+            builder: (context) => McqPage(
+              subjectData: {
+                'title': task['subject'],
+                'color': _getSubjectColor(task['subject']),
+              },
+              topicData: {
+                'title': task['title'],
+                'testId': task['testId'],
               },
             ),
           ),
@@ -534,7 +553,8 @@ class TasksScreenState extends State<TasksScreen> {
                       color: item['color'],
                     ),
                   ),
-                  if (item['recentTests'] != null && item['recentTests'].isNotEmpty) ...[
+                  if (item['recentTests'] != null &&
+                      item['recentTests'].isNotEmpty) ...[
                     const SizedBox(height: 12),
                     // Recent tests preview
                     Column(
@@ -549,30 +569,34 @@ class TasksScreenState extends State<TasksScreen> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        ...item['recentTests'].take(2).map((test) => Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.assignment,
-                                size: 14,
-                                color: item['color'],
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  test['title']?.toString() ?? 'Untitled Test',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
+                        ...item['recentTests']
+                            .take(2)
+                            .map((test) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 4),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.assignment,
+                                        size: 14,
+                                        color: item['color'],
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          test['title']?.toString() ??
+                                              'Untitled Test',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )).toList(),
+                                ))
+                            .toList(),
                       ],
                     ),
                   ],
@@ -636,7 +660,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   void initState() {
     super.initState();
     // Convert the status to boolean
-    _isCompleted = widget.task['status']?.toString().toLowerCase() == 'completed';
+    _isCompleted =
+        widget.task['status']?.toString().toLowerCase() == 'completed';
   }
 
   Future<void> _updateTestStatus() async {
@@ -673,11 +698,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             backgroundColor: Colors.red,
           ),
         );
-    }
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
-  }
+      }
     }
   }
 
@@ -701,16 +726,17 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-            Text(
+                    Text(
                       widget.task['title']?.toString() ?? 'Untitled Task',
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-                      widget.task['description']?.toString() ?? 'No description available',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.task['description']?.toString() ??
+                          'No description available',
                       style: const TextStyle(
                         fontSize: 16,
                         color: Colors.grey,
@@ -724,9 +750,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         Text(
                           'Due: ${widget.task['dueDate']?.toString() ?? 'No due date'}',
                           style: const TextStyle(fontSize: 16),
-            ),
-          ],
-        ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 16),
                     Row(
                       children: [
@@ -745,30 +771,31 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             const SizedBox(height: 24),
             Card(
               elevation: 4,
-                child: Padding(
+              child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     const Text(
                       'Status',
-                              style: TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                      ),
+                    ),
                     const SizedBox(height: 16),
-                            Row(
-                              children: [
+                    Row(
+                      children: [
                         Expanded(
                           child: Text(
                             _isCompleted ? 'Completed' : 'Pending',
-                                  style: TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
-                              color: _isCompleted ? Colors.green : Colors.orange,
+                              color:
+                                  _isCompleted ? Colors.green : Colors.orange,
                               fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                            ),
+                          ),
                         ),
                         Switch(
                           value: _isCompleted,
@@ -780,8 +807,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                 },
                           activeColor: Colors.green,
                         ),
-                    ],
-                  ),
+                      ],
+                    ),
                   ],
                 ),
               ),

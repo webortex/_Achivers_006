@@ -13,6 +13,7 @@ class RegistrationService {
     required String className,
     required String section,
     String? parentEmail,
+    String? classTeacherId,
   }) async {
     try {
       // Check if student already exists
@@ -32,6 +33,7 @@ class RegistrationService {
         'class': className,
         'section': section,
         'parentEmail': parentEmail,
+        'classTeacherId': classTeacherId,
         'createdAt': FieldValue.serverTimestamp(),
       });
       
